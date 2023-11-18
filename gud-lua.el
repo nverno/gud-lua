@@ -5,7 +5,7 @@
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "29.1"))
 ;; Created: 17 November 2023
-;; Keywords: tools, languages, debugging
+;; Keywords: tools, languages, debugging, gud, lua
 
 ;; This file is not part of GNU Emacs.
 ;;
@@ -57,6 +57,16 @@
   "Keymap to repeat `gud-lua' stepping instructions.
 Used in `repeat-mode'.")
 
+;; Byte-compiler complains about unknown functions
+(eval-when-compile
+  (defmacro gud-lua--declare (&rest fns)
+    (macroexp-progn
+     `(,@(mapcar (lambda (fn)
+                   `(declare-function
+                     ,(intern (format "gud-%s" (symbol-name fn))) "gud" (arg)))
+                 fns))))
+  (gud-lua--declare next step cont finish up down refresh trace statement print))
+
 ;; Match possibilities:
 ;; break via dbg() => file.lua:123 in ...
 ;; break via dbg.call() => file.lua:123 in ...
@@ -104,11 +114,16 @@ Used in `repeat-mode'.")
         (setq output (concat output (substring gud-lua-marker-acc 0 (match-beginning 0)))
               ;; Everything after, we save, to combine with later input.
               gud-lua-marker-acc (substring gud-lua-marker-acc (match-beginning 0)))
-      
+
       (setq output (concat output gud-lua-marker-acc)
             gud-lua-marker-acc ""))
 
     output))
+
+;;; TODO:
+;; define `gud-find-expr-function' to get lua expression/statement at point for
+;; print/eval
+;; See default `gud-find-c-expr'
 
 ;;;###autoload
 (defun gud-lua (command-line)
@@ -120,24 +135,28 @@ directory and source-file directory for your debugger.
 
 For general information about commands available to control the debugging
 process from gud, see `gud-mode'."
-  (interactive (list (gud-query-cmdline 'gud-lua)))
-  (gud-common-init command-line nil 'gud-lua-marker-filter)
+  (interactive (list (gud-query-cmdline 'lua)))
+  (let ((process-environment            ; Linenoise is useless in emacs
+         (append (list "DBG_NOREADLINE=1") (copy-sequence process-environment))))
+    (gud-common-init command-line nil 'gud-lua-marker-filter))
+
   (setq-local gud-minor-mode 'gud-lua)
-  
-  (gud-def gud-step      "s"    "\C-s" "Step one line (into functions)."    )  
-  (gud-def gud-next      "n"    "\C-n" "Step one line (skip functions)."    )  
-  (gud-def gud-cont      "c"    "\C-r" "Continue running program."          )  
-  (gud-def gud-finish    "f"    "\C-f" "Finish executing current function." )  
-  (gud-def gud-up        "u"    "<"    "Up stack frame."                    )  
-  (gud-def gud-down      "d"    ">"    "Down stack frame."                  )  
-  (gud-def gud-print     "p %e" "\C-p" "Evaluate lua expression at point."  )  
-  (gud-def gud-statement "e %e" "\C-e" "Execute lua statement at point."    ) 
-  (gud-def gud-trace     "t"    "\C-t" "Print stack trace."                 )  
+
+  (gud-def gud-step      "s"    "\C-s" "Step one line (into functions)."    )
+  (gud-def gud-next      "n"    "\C-n" "Step one line (skip functions)."    )
+  (gud-def gud-cont      "c"    "\C-r" "Continue running program."          )
+  (gud-def gud-finish    "f"    "\C-f" "Finish executing current function." )
+  (gud-def gud-up        "u"    "<"    "Up stack frame."                    )
+  (gud-def gud-down      "d"    ">"    "Down stack frame."                  )
+  (gud-def gud-print     "p %e" "\C-p" "Evaluate lua expression at point."  )
+  (gud-def gud-statement "e %e" "\C-e" "Execute lua statement at point."    )
+  (gud-def gud-trace     "t"    "\C-t" "Print stack trace."                 )
 
   (gud-set-repeat-map-property 'gud-lua-repeat-map)
-  
+
   (setq comint-prompt-regexp gud-lua-prompt-regexp)
   (setq paragraph-start comint-prompt-regexp)
+  (compilation-shell-minor-mode)
   (run-hooks 'gud-lua-mode-hook))
 
 (provide 'gud-lua)
