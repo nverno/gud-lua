@@ -136,7 +136,17 @@ directory and source-file directory for your debugger.
 For general information about commands available to control the debugging
 process from gud, see `gud-mode'."
   (interactive (list (gud-query-cmdline 'gud-lua)))
-  (gud-common-init command-line nil 'gud-lua-marker-filter)
+  ;; TODO: this results in colorized output, using `xterm-color'
+  ;; but for some reason its slow and fails periodically -
+  ;; check the marker-acc and see if escape codes are being removed.
+  (let ((comint-terminfo-terminal "xterm-256color")
+        ;; (process-environment
+	;;  (nconc (comint-term-environment)
+	;;         (list "TERM=xterm-256color")
+	;;         process-environment))
+        )
+    (gud-common-init command-line nil 'gud-lua-marker-filter))
+
   (setq-local gud-minor-mode 'gud-lua)
 
   (gud-def gud-step      "s"    "\C-s" "Step one line (into functions)."    )
