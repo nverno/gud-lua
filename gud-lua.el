@@ -5,7 +5,7 @@
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "29.1"))
 ;; Created: 17 November 2023
-;; Keywords: tools, languages, debugging
+;; Keywords: tools, languages, debugging, gud, lua
 
 ;; This file is not part of GNU Emacs.
 ;;
@@ -33,7 +33,7 @@
 
 (require 'gud)
 
-(defcustom gud-lua-command-name "lua"
+(defcustom gud-gud-lua-command-name "lua"
   "Command to run lua program."
   :type 'string
   :group 'gud)
@@ -42,6 +42,8 @@
   "Regexp to match debbuger.lua prompt."
   :type 'string
   :group 'gud)
+
+(defvar gud-gud-lua-history nil)
 
 (defvar gud-lua-repeat-map
   (let ((map (make-sparse-keymap)))
