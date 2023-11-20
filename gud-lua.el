@@ -137,7 +137,7 @@ directory and source-file directory for your debugger.
 
 For general information about commands available to control the debugging
 process from gud, see `gud-mode'."
-  (interactive (list (gud-query-cmdline 'gud-lua)))
+  (interactive (list (gud-query-cmdline 'lua)))
   ;; TODO: this results in colorized output, using `xterm-color'
   ;; but for some reason its slow and fails periodically -
   ;; check the marker-acc and see if escape codes are being removed.
