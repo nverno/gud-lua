@@ -33,17 +33,21 @@
 
 (require 'gud)
 
-(defcustom gud-gud-lua-command-name "lua"
+(defcustom gud-lua-command-name "lua"
   "Command to run lua program."
   :type 'string
   :group 'gud)
 
-(defcustom gud-lua-prompt-regexp "^debugger.lua> *"
+;; [33mdebugger.lua: [0mLinenoise support enabled.
+;; [33mdebugger.lua: [0mLoaded for Lua 5.4
+;; [33mbreak via [91mdbg()[92m => [0m[94mtutorial.lua[0m:[33m8[0m in global '[94mpoo[0m'
+;; "
+;; ansi regexp: "\e\\[[\x30-\x3F]*[\x20-\x2F]*[\x40-\x7E]"
+(defcustom gud-lua-prompt-regexp
+  "^debugger.lua> *"
   "Regexp to match debbuger.lua prompt."
   :type 'string
   :group 'gud)
-
-(defvar gud-gud-lua-history nil)
 
 (defvar gud-lua-repeat-map
   (let ((map (make-sparse-keymap)))
@@ -91,7 +95,9 @@ Used in `repeat-mode'.")
 ;; beginning of a marker, we save it here between calls to the
 ;; filter.
 (defun gud-lua-marker-filter (string)
-  (setq gud-lua-marker-acc (concat gud-lua-marker-acc string))
+  (setq gud-lua-marker-acc (concat gud-lua-marker-acc string
+                                   ;; (xterm-color-filter-strip string)
+                                   ))
   (let ((output ""))
     ;; Process all the complete markers in this chunk.
     (while (string-match gud-lua-marker-regexp gud-lua-marker-acc)
@@ -141,13 +147,14 @@ process from gud, see `gud-mode'."
   ;; TODO: this results in colorized output, using `xterm-color'
   ;; but for some reason its slow and fails periodically -
   ;; check the marker-acc and see if escape codes are being removed.
-  (let ((comint-terminfo-terminal "xterm-256color")
-        ;; (process-environment
-	;;  (nconc (comint-term-environment)
-	;;         (list "TERM=xterm-256color")
-	;;         process-environment))
-        )
-    (gud-common-init command-line nil 'gud-lua-marker-filter))
+  ;; let ((comint-terminfo-terminal "xterm-256color")
+  ;;      (comint-process-echoes t)
+  ;;      ;; (process-environment
+  ;;      ;;  (nconc (comint-term-environment)
+  ;;      ;;         (list "TERM=xterm-256color")
+  ;;      ;;         process-environment))
+  ;;      )
+  (gud-common-init command-line nil 'gud-lua-marker-filter)
 
   (setq-local gud-minor-mode 'gud-lua)
 
